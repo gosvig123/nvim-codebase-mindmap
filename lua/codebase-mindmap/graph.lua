@@ -323,11 +323,11 @@ function M.build_function_call_graph(bufnr, symbol)
       end
 
       local level = -(call.depth + 1)
-      local depth_indicator = call.depth > 0 and string.rep("  ", call.depth) .. "↳ " or ""
+      local depth_indicator = call.depth > 0 and "↳ " or ""
 
       nodes[caller_id] = {
         id = caller_id,
-        name = depth_indicator .. caller_name .. " →",
+        name = depth_indicator .. caller_name,
         kind = "Caller",
         children = {},
         level = level,

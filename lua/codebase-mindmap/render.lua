@@ -149,24 +149,57 @@ function M.render(graph, positions, selected_node)
   local max_y = 0
 
   for _, pos in pairs(positions) do
-    max_x = math.max(max_x, pos.x + pos.width + 10)
+    max_x = math.max(max_x, pos.x + pos.width + 15)
     max_y = math.max(max_y, pos.y + pos.height + 2)
   end
 
-  max_x = math.max(max_x, 120)
-  max_y = math.max(max_y, 50)
+  max_x = math.max(max_x, 200)
+  max_y = math.max(max_y, 60)
 
   local canvas = M.create_canvas(max_x, max_y)
+
+  local has_callers = false
+  local has_callees = false
+  for node_id, node in pairs(graph.nodes) do
+    if node.kind == "Caller" then has_callers = true end
+    if node.kind == "Callee" then has_callees = true end
+  end
+
+  if has_callers then
+    local header = "◄ CALLERS"
+    for i = 1, #header do
+      M.set_char(canvas, 10 + i - 1, 1, header:sub(i, i), 10)
+    end
+  end
+
+  if has_callees then
+    local header = "CALLEES ►"
+    for i = 1, #header do
+      M.set_char(canvas, 105 + i - 1, 1, header:sub(i, i), 10)
+    end
+  end
 
   for _, edge in ipairs(graph.edges) do
     local from_pos = positions[edge.from]
     local to_pos = positions[edge.to]
 
     if from_pos and to_pos then
-      local x1 = from_pos.x + from_pos.width
-      local y1 = from_pos.y + 1
-      local x2 = to_pos.x - 1
-      local y2 = to_pos.y + 1
+      local from_node = graph.nodes[edge.from]
+      local to_node = graph.nodes[edge.to]
+      
+      local x1, y1, x2, y2
+      
+      if from_node and from_node.kind == "Caller" then
+        x1 = from_pos.x + from_pos.width
+        y1 = from_pos.y + 1
+        x2 = to_pos.x - 1
+        y2 = to_pos.y + 1
+      else
+        x1 = from_pos.x + from_pos.width
+        y1 = from_pos.y + 1
+        x2 = to_pos.x - 1
+        y2 = to_pos.y + 1
+      end
 
       M.draw_arrow(canvas, x1, y1, x2, y2)
     end
