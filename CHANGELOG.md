@@ -4,6 +4,27 @@ All notable changes to nvim-codebase-mindmap are documented here.
 
 ## [Latest] - 2024-10-06
 
+### 📏 Spacing & Readability Improvements
+
+#### Box Enhancements
+- **Wider boxes**: Increased padding from +4 to +6 characters
+- **Better text space**: Max width 35 → 40 characters (45 for root)
+- **More padding**: 3 spaces from edge (was 1-2)
+- **Smart truncation**: Long names show "..." elegantly
+- **Cleaner selection**: `** name **` indicator (was `*** name ***`)
+
+#### Layout Spacing
+- **Vertical**: 5 units between nodes (was 4) - less cramped
+- **Horizontal**: 45 units between levels (was 35) - clearer hierarchy
+- **Root centering**: x=70 (was 60) - better balance
+- **Tree separation**: More space between caller/callee trees
+- **Canvas size**: 250x70 (was 200x60) - more room to breathe
+
+#### Overview Grid
+- **Column width**: 42 (was 35) - more spacious
+- **Box padding**: Consistent with tree view
+- **Better readability**: Less cramped grid layout
+
 ### 🎉 Major Layout Redesign
 
 #### Tree-Based Organization
