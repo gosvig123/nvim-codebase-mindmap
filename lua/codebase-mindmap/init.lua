@@ -12,11 +12,11 @@ function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
   
   vim.api.nvim_create_user_command("CodebaseMindmapFunction", function()
-    require("codebase-mindmap.ui").show_function_graph()
+    require("codebase-mindmap.ui").show_file_map()
   end, {})
 
   vim.api.nvim_create_user_command("CodebaseMindmapOverview", function()
-    require("codebase-mindmap.ui").show_overview()
+    require("codebase-mindmap.ui").show_workspace_map()
   end, {})
 
   vim.api.nvim_create_user_command("MindMap", function(args)
