@@ -128,17 +128,23 @@ function M.draw_box(canvas, x, y, width, height, text, style, is_selected)
   end
 
   local text_y = y + math.floor(height / 2)
-  local text_x = x + 2
+  local padding = 3
+  local text_x = x + padding
 
   if is_selected then
-    text = "*** " .. text .. " ***"
-    text_x = x + 1
+    text = "** " .. text .. " **"
+  end
+
+  local available_width = width - (padding * 2)
+  local display_text = text
+  if #text > available_width then
+    display_text = text:sub(1, available_width - 3) .. "..."
   end
 
   if text_y >= 1 and text_y <= #canvas.data then
-    for i = 1, math.min(#text, width - 2) do
+    for i = 1, #display_text do
       if text_x + i - 1 >= 1 and text_x + i - 1 <= #canvas.data[1] then
-        M.set_char(canvas, text_x + i - 1, text_y, text:sub(i, i), priority + 1)
+        M.set_char(canvas, text_x + i - 1, text_y, display_text:sub(i, i), priority + 1)
       end
     end
   end
@@ -153,8 +159,8 @@ function M.render(graph, positions, selected_node)
     max_y = math.max(max_y, pos.y + pos.height + 2)
   end
 
-  max_x = math.max(max_x, 200)
-  max_y = math.max(max_y, 60)
+  max_x = math.max(max_x, 250)
+  max_y = math.max(max_y, 70)
 
   local canvas = M.create_canvas(max_x, max_y)
 
@@ -168,14 +174,14 @@ function M.render(graph, positions, selected_node)
   if has_callers then
     local header = "◄ CALLERS"
     for i = 1, #header do
-      M.set_char(canvas, 10 + i - 1, 1, header:sub(i, i), 10)
+      M.set_char(canvas, 15 + i - 1, 1, header:sub(i, i), 10)
     end
   end
 
   if has_callees then
     local header = "CALLEES ►"
     for i = 1, #header do
-      M.set_char(canvas, 105 + i - 1, 1, header:sub(i, i), 10)
+      M.set_char(canvas, 130 + i - 1, 1, header:sub(i, i), 10)
     end
   end
 
