@@ -4,12 +4,13 @@ An interactive call graph visualization plugin for Neovim that helps you underst
 
 ## ✨ Features
 
-- 🔍 **Interactive Call Graph** - Visualize function callers and callees with multi-level depth
+- 🌳 **True Tree Layout** - Children positioned directly under parents for clear hierarchy
+- 🔍 **12-Level Deep Nesting** - Explore deep call chains with proper parent-child relationships
 - 📊 **File Overview Mode** - Browse all functions in a file as a searchable grid
 - 🎯 **Smart Filtering** - Automatically filters out built-in and framework functions
 - ⌨️ **Intuitive Navigation** - hjkl/arrow keys for seamless movement
 - 🚀 **Jump to Code** - Navigate directly to function definitions
-- 🎨 **ASCII Art Rendering** - Clean, terminal-friendly visualization
+- 🎨 **Clean Visualization** - Section headers, depth indicators (↳), and organized layout
 - 🔧 **LSP Integration** - Works with any LSP server supporting call hierarchy (basedpyright, tsserver, rust-analyzer, etc.)
 
 ## 📦 Installation
@@ -68,27 +69,30 @@ Plug 'neovim/nvim-lspconfig'
 
 ### Function View (`<leader>mf`)
 
-Shows the function under cursor with:
-- **Left side**: Callers (who calls this function)
-- **Right side**: Callees (what this function calls)
-- **Multi-level depth**: Shows nested call relationships
+Shows the function under cursor with a clear tree structure:
+- **Left side (◄ CALLERS)**: Who calls this function
+- **Center**: The selected function (double border)
+- **Right side (CALLEES ►)**: What this function calls
+- **Tree layout**: Children positioned under parents with depth indicators (↳)
 
 ```
-    ╭─────────────────╮
-    │ handle_request  │──┐
-    ╰─────────────────╯  │
-                         │
-    ╔═══════════════╗    │
-    ║ process_data  ║●───┼──┐
-    ╚═══════════════╝    │  │
-                         │  │
-    ╭──────────────╮     │  │
-    │ validate_user│←────┘  │
-    ╰──────────────╯        │
-                            │
-    ╭────────────╮          │
-    │ save_to_db │←─────────┘
-    ╰────────────╯
+◄ CALLERS                                                    CALLEES ►
+
+╭───────────────╮                                         ╭─────────────╮
+│ handle_request│────┐                              ┌────▶│ validate    │
+╰───────────────╯    │                              │     ╰─────────────╯
+                     │                              │           
+  ╭───────────────╮  │      ╔═══════════════╗      │     ╭─────────────╮
+  │↳ from_api     │──┴─────▶║ process_data  ║●─────┼────▶│ save_to_db  │
+  ╰───────────────╯         ╚═══════════════╝      │     ╰─────────────╯
+                                                    │           │
+                                                    │           └─▶╭─────────────╮
+                                                    │              │↳ commit     │
+                                                    │              ╰─────────────╯
+                                                    │     
+                                                    └────▶╭─────────────╮
+                                                          │ log_info    │
+                                                          ╰─────────────╯
 ```
 
 ### Overview Mode (`<leader>mm`)
