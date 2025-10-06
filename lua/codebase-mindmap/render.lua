@@ -41,7 +41,7 @@ function M.draw_arrow(canvas, x1, y1, x2, y2)
     end
     M.set_char(canvas, x2, y2, "▶", 2)
   else
-    local mid_x = x1 + math.floor((x2 - x1) * 0.5)
+    local mid_x = x1 + 3
 
     for x = x1, mid_x do
       if x == x1 then

@@ -24,15 +24,15 @@ function M.compact_layout(graph)
     end)
   end
 
-  local y_spacing = 5
+  local y_spacing = 4
   local x_caller_base = 5
-  local x_root = 50
-  local x_callee_base = 95
-  local x_depth_offset = 15
+  local x_root = 60
+  local x_callee_base = 115
+  local x_depth_offset = 25
 
   local root_node = graph.nodes["root"]
   if root_node then
-    local root_y = 10
+    local root_y = 3
 
     positions["root"] = {
       x = x_root,
@@ -43,14 +43,14 @@ function M.compact_layout(graph)
   end
 
   local callers_by_level = {}
-  for level = -3, -1 do
+  for level = -12, -1 do
     if level_groups[level] then
       callers_by_level[level] = level_groups[level]
     end
   end
 
   local current_y = 3
-  for level = -3, -1 do
+  for level = -12, -1 do
     if callers_by_level[level] then
       for _, node_info in ipairs(callers_by_level[level]) do
         local node = graph.nodes[node_info.id]
@@ -70,14 +70,14 @@ function M.compact_layout(graph)
   end
 
   local callees_by_level = {}
-  for level = 1, 3 do
+  for level = 1, 12 do
     if level_groups[level] then
       callees_by_level[level] = level_groups[level]
     end
   end
 
   current_y = 3
-  for level = 1, 3 do
+  for level = 1, 12 do
     if callees_by_level[level] then
       for _, node_info in ipairs(callees_by_level[level]) do
         local node = graph.nodes[node_info.id]

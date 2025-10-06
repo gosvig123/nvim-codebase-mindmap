@@ -323,11 +323,11 @@ function M.build_function_call_graph(bufnr, symbol)
       end
 
       local level = -(call.depth + 1)
-      local indent = string.rep("  ", call.depth)
+      local depth_indicator = call.depth > 0 and string.rep("  ", call.depth) .. "↳ " or ""
 
       nodes[caller_id] = {
         id = caller_id,
-        name = indent .. caller_name .. " →",
+        name = depth_indicator .. caller_name .. " →",
         kind = "Caller",
         children = {},
         level = level,
@@ -361,11 +361,11 @@ function M.build_function_call_graph(bufnr, symbol)
       end
 
       local level = call.depth + 1
-      local indent = string.rep("  ", call.depth)
+      local depth_indicator = call.depth > 0 and "↳ " or ""
 
       nodes[callee_id] = {
         id = callee_id,
-        name = indent .. callee_name,
+        name = depth_indicator .. callee_name,
         kind = "Callee",
         children = {},
         level = level,
