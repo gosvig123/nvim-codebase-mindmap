@@ -184,7 +184,7 @@ function M.find_symbol_at_cursor(bufnr)
   return nil
 end
 
-function M.get_incoming_calls_recursive(client, item, depth, max_depth, visited)
+function M.get_incoming_calls_recursive(client, item, depth, max_depth, visited, parent_info)
   if depth >= max_depth then
     return {}
   end
@@ -203,13 +203,15 @@ function M.get_incoming_calls_recursive(client, item, depth, max_depth, visited)
 
   local calls = {}
   for _, call in ipairs(result.result) do
-    table.insert(calls, {
+    local call_info = {
       from = call.from,
       depth = depth,
-    })
+      parent = parent_info,
+    }
+    table.insert(calls, call_info)
 
     if depth < max_depth - 1 then
-      local nested = M.get_incoming_calls_recursive(client, call.from, depth + 1, max_depth, visited)
+      local nested = M.get_incoming_calls_recursive(client, call.from, depth + 1, max_depth, visited, call_info)
       for _, nested_call in ipairs(nested) do
         table.insert(calls, nested_call)
       end
@@ -219,7 +221,7 @@ function M.get_incoming_calls_recursive(client, item, depth, max_depth, visited)
   return calls
 end
 
-function M.get_outgoing_calls_recursive(client, item, depth, max_depth, visited)
+function M.get_outgoing_calls_recursive(client, item, depth, max_depth, visited, parent_info)
   if depth >= max_depth then
     return {}
   end
@@ -238,13 +240,15 @@ function M.get_outgoing_calls_recursive(client, item, depth, max_depth, visited)
 
   local calls = {}
   for _, call in ipairs(result.result) do
-    table.insert(calls, {
+    local call_info = {
       to = call.to,
       depth = depth,
-    })
+      parent = parent_info,
+    }
+    table.insert(calls, call_info)
 
     if depth < max_depth - 1 then
-      local nested = M.get_outgoing_calls_recursive(client, call.to, depth + 1, max_depth, visited)
+      local nested = M.get_outgoing_calls_recursive(client, call.to, depth + 1, max_depth, visited, call_info)
       for _, nested_call in ipairs(nested) do
         table.insert(calls, nested_call)
       end
@@ -296,32 +300,23 @@ function M.build_function_call_graph(bufnr, symbol)
       if prepare_result and prepare_result.result and #prepare_result.result > 0 then
         local item = prepare_result.result[1]
 
-        -- Reduce depth to 2 levels (was 3)
-        incoming_calls = M.get_incoming_calls_recursive(client, item, 0, 2, {})
-        outgoing_calls = M.get_outgoing_calls_recursive(client, item, 0, 2, {})
+        -- Support up to 12 levels of nesting
+        incoming_calls = M.get_incoming_calls_recursive(client, item, 0, 12, {})
+        outgoing_calls = M.get_outgoing_calls_recursive(client, item, 0, 12, {})
       end
       break
     end
   end
 
   local id_counter = 0
-  local caller_levels = {}
-
-  -- Limit callers to max 8
-  local caller_count = 0
-  local max_callers = 8
+  local caller_map = {}
 
   for _, call in ipairs(incoming_calls) do
-    if caller_count >= max_callers then
-      break
-    end
-
     local caller_name = call.from.name
 
     if not is_builtin_or_stdlib(caller_name) then
       id_counter = id_counter + 1
       local caller_id = "caller_" .. id_counter
-      caller_count = caller_count + 1
 
       if #caller_name > 28 then
         caller_name = caller_name:sub(1, 25) .. "..."
@@ -341,44 +336,25 @@ function M.build_function_call_graph(bufnr, symbol)
         uri = call.from.uri,
       }
 
-      caller_levels[level] = caller_levels[level] or {}
-      table.insert(caller_levels[level], caller_id)
+      caller_map[call] = caller_id
 
       if call.depth == 0 then
         table.insert(edges, { from = caller_id, to = root.id })
+      elseif call.parent and caller_map[call.parent] then
+        local parent_id = caller_map[call.parent]
+        table.insert(edges, { from = caller_id, to = parent_id })
       end
     end
   end
 
-  for level, caller_ids in pairs(caller_levels) do
-    if level < -1 then
-      for _, caller_id in ipairs(caller_ids) do
-        local parent_level = level + 1
-        if caller_levels[parent_level] and #caller_levels[parent_level] > 0 then
-          local parent_id = caller_levels[parent_level][1]
-          table.insert(edges, { from = caller_id, to = parent_id })
-        end
-      end
-    end
-  end
-
-  local callee_levels = {}
-
-  -- Limit callees to max 10
-  local callee_count = 0
-  local max_callees = 10
+  local callee_map = {}
 
   for _, call in ipairs(outgoing_calls) do
-    if callee_count >= max_callees then
-      break
-    end
-
     local callee_name = call.to.name
 
     if not is_builtin_or_stdlib(callee_name) then
       id_counter = id_counter + 1
       local callee_id = "callee_" .. id_counter
-      callee_count = callee_count + 1
 
       if #callee_name > 28 then
         callee_name = callee_name:sub(1, 25) .. "..."
@@ -398,25 +374,15 @@ function M.build_function_call_graph(bufnr, symbol)
         uri = call.to.uri,
       }
 
-      callee_levels[level] = callee_levels[level] or {}
-      table.insert(callee_levels[level], callee_id)
+      callee_map[call] = callee_id
 
       if call.depth == 0 then
         table.insert(root.children, callee_id)
         table.insert(edges, { from = root.id, to = callee_id })
-      end
-    end
-  end
-
-  for level, callee_ids in pairs(callee_levels) do
-    if level > 1 then
-      for _, callee_id in ipairs(callee_ids) do
-        local parent_level = level - 1
-        if callee_levels[parent_level] and #callee_levels[parent_level] > 0 then
-          local parent_id = callee_levels[parent_level][1]
-          table.insert(nodes[parent_id].children, callee_id)
-          table.insert(edges, { from = parent_id, to = callee_id })
-        end
+      elseif call.parent and callee_map[call.parent] then
+        local parent_id = callee_map[call.parent]
+        table.insert(nodes[parent_id].children, callee_id)
+        table.insert(edges, { from = parent_id, to = callee_id })
       end
     end
   end
