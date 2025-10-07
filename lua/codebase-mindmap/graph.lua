@@ -124,6 +124,15 @@ local function is_builtin_or_stdlib(name)
 		"reversed",
 		"next",
 		"iter",
+		-- Logging
+		"debug",
+		"info",
+		"warning",
+		"error",
+		"critical",
+		"log",
+		"exception",
+		"fatal",
 	}
 
 	-- Framework/library specific (FastAPI, SQLAlchemy, Supabase, etc.)
@@ -274,12 +283,18 @@ local function is_builtin_or_stdlib(name)
 			"HTTPError",
 			"Field",
 			"Validator",
+			"Logger",
 		}
 		for _, type_name in ipairs(common_types) do
 			if name == type_name then
 				return true
 			end
 		end
+	end
+
+	-- Filter logger patterns
+	if lower_name == "logger" or lower_name == "getlogger" or lower_name == "basicconfig" then
+		return true
 	end
 
 	return false

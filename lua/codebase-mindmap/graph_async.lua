@@ -30,6 +30,9 @@ local function is_builtin_or_stdlib(name)
     "isdigit", "isalpha", "isupper", "islower",
     "len", "str", "int", "float", "bool", "list", "dict", "set",
     "print", "input", "range", "enumerate", "zip", "map", "filter",
+    -- Logging
+    "debug", "info", "warning", "error", "critical", "log",
+    "exception", "fatal",
   }
 
   local framework_and_decorators = {
@@ -72,13 +75,18 @@ local function is_builtin_or_stdlib(name)
     local common_types = {
       "Doc", "Default", "Query", "Path", "Body", "Header", "Cookie",
       "Form", "File", "Depends", "Security", "Response", "Request",
-      "HTTPException", "HTTPError", "Field", "Validator",
+      "HTTPException", "HTTPError", "Field", "Validator", "Logger",
     }
     for _, type_name in ipairs(common_types) do
       if name == type_name then
         return true
       end
     end
+  end
+
+  -- Filter logger patterns
+  if lower_name == "logger" or lower_name == "getlogger" or lower_name == "basicconfig" then
+    return true
   end
 
   return lower_name:match("^_") or lower_name:match("__init__") or lower_name:match("__str__")
