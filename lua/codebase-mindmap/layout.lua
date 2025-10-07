@@ -58,7 +58,7 @@ function M.compact_layout(graph)
 	end
 
 	local y_spacing = 6
-	local x_offset = 40
+	local x_offset = 20
 	local x_root = 50
 
 	local root_node = graph.nodes["root"]
@@ -97,7 +97,7 @@ function M.compact_layout(graph)
 				graph,
 				node_id,
 				positions,
-				x_root - x_offset - 4,
+				x_root - x_offset - 2,
 				caller_y,
 				-x_offset,
 				y_spacing,
@@ -110,7 +110,7 @@ function M.compact_layout(graph)
 	for node_id, node in pairs(graph.nodes) do
 		if node.kind == "Callee" and node.depth == 0 then
 			callee_y =
-				layout_tree_recursive(graph, node_id, positions, x_root + 44, callee_y, x_offset, y_spacing, false)
+				layout_tree_recursive(graph, node_id, positions, x_root + 22, callee_y, x_offset, y_spacing, false)
 		end
 	end
 
@@ -162,7 +162,7 @@ function M.tree_layout(graph)
 	end
 
 	local y_spacing = 6
-	local x_offset = 36
+	local x_offset = 18
 	local x_root = 40
 
 	local root_node = graph.nodes["root"]
@@ -201,7 +201,7 @@ function M.tree_layout(graph)
 				graph,
 				node_id,
 				positions,
-				x_root - x_offset - 4,
+				x_root - x_offset - 2,
 				caller_y,
 				-x_offset,
 				y_spacing,
@@ -214,7 +214,7 @@ function M.tree_layout(graph)
 	for node_id, node in pairs(graph.nodes) do
 		if node.kind == "Callee" and node.depth == 0 then
 			callee_y =
-				layout_tree_recursive(graph, node_id, positions, x_root + 38, callee_y, x_offset, y_spacing, false)
+				layout_tree_recursive(graph, node_id, positions, x_root + 19, callee_y, x_offset, y_spacing, false)
 		end
 	end
 
@@ -229,7 +229,7 @@ function M.wide_layout(graph)
 	end
 
 	local y_spacing = 6
-	local x_offset = 44
+	local x_offset = 22
 	local x_root = 80
 
 	local root_node = graph.nodes["root"]
@@ -268,7 +268,7 @@ function M.wide_layout(graph)
 				graph,
 				node_id,
 				positions,
-				x_root - x_offset - 4,
+				x_root - x_offset - 2,
 				caller_y,
 				-x_offset,
 				y_spacing,
@@ -281,7 +281,7 @@ function M.wide_layout(graph)
 	for node_id, node in pairs(graph.nodes) do
 		if node.kind == "Callee" and node.depth == 0 then
 			callee_y =
-				layout_tree_recursive(graph, node_id, positions, x_root + 48, callee_y, x_offset, y_spacing, false)
+				layout_tree_recursive(graph, node_id, positions, x_root + 24, callee_y, x_offset, y_spacing, false)
 		end
 	end
 

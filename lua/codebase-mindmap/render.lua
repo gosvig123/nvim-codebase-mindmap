@@ -152,11 +152,11 @@ function M.render(graph, positions, selected_node)
   local max_y = 0
 
   for _, pos in pairs(positions) do
-    max_x = math.max(max_x, pos.x + pos.width + 10)
+    max_x = math.max(max_x, pos.x + pos.width + 5)
     max_y = math.max(max_y, pos.y + pos.height + 2)
   end
 
-  max_x = math.max(max_x, 150)
+  max_x = math.max(max_x, 100)
   max_y = math.max(max_y, 35)
 
   local canvas = M.create_canvas(max_x, max_y)
