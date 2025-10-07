@@ -19,13 +19,13 @@ local function layout_tree_recursive(graph, node_id, positions, x, y, x_offset, 
 		return y
 	end
 
-	local box_width = math.min(#node.name + 6, 40)
+	local box_width = math.max(12, math.min(#node.name + 6, 36))
 
 	positions[node_id] = {
 		x = x,
 		y = y,
 		width = box_width,
-		height = 3,
+		height = 5,
 	}
 
 	local current_y = y
@@ -57,9 +57,9 @@ function M.compact_layout(graph)
 		return M.overview_layout(graph)
 	end
 
-	local y_spacing = 4
-	local x_offset = 45
-	local x_root = 70
+	local y_spacing = 6
+	local x_offset = 38
+	local x_root = 50
 
 	local root_node = graph.nodes["root"]
 	if not root_node then
@@ -86,8 +86,8 @@ function M.compact_layout(graph)
 	positions["root"] = {
 		x = x_root,
 		y = root_y,
-		width = math.min(#root_node.name + 8, 45),
-		height = 3,
+		width = math.max(14, math.min(#root_node.name + 8, 40)),
+		height = 5,
 	}
 
 	local caller_y = 2
@@ -131,9 +131,9 @@ function M.overview_layout(graph)
 		return graph.nodes[a].name < graph.nodes[b].name
 	end)
 
-	local cols = 4
-	local col_width = 42
-	local row_height = 4
+	local cols = 5
+	local col_width = 36
+	local row_height = 6
 	local x_start = 5
 	local y_start = 3
 
@@ -146,8 +146,8 @@ function M.overview_layout(graph)
 		positions[func_id] = {
 			x = x_start + (col * col_width),
 			y = y_start + (row * row_height),
-			width = math.min(#node.name + 6, 38),
-			height = 3,
+			width = math.max(12, math.min(#node.name + 6, 34)),
+			height = 5,
 		}
 	end
 
@@ -161,9 +161,9 @@ function M.tree_layout(graph)
 		return M.overview_layout(graph)
 	end
 
-	local y_spacing = 4
-	local x_offset = 30
-	local x_root = 50
+	local y_spacing = 6
+	local x_offset = 32
+	local x_root = 40
 
 	local root_node = graph.nodes["root"]
 	if not root_node then
@@ -190,8 +190,8 @@ function M.tree_layout(graph)
 	positions["root"] = {
 		x = x_root,
 		y = root_y,
-		width = math.min(#root_node.name + 8, 45),
-		height = 3,
+		width = math.max(14, math.min(#root_node.name + 8, 40)),
+		height = 5,
 	}
 
 	local caller_y = 2
@@ -228,8 +228,8 @@ function M.wide_layout(graph)
 		return M.overview_layout(graph)
 	end
 
-	local y_spacing = 5
-	local x_offset = 60
+	local y_spacing = 6
+	local x_offset = 56
 	local x_root = 80
 
 	local root_node = graph.nodes["root"]
@@ -257,8 +257,8 @@ function M.wide_layout(graph)
 	positions["root"] = {
 		x = x_root,
 		y = root_y,
-		width = math.min(#root_node.name + 8, 45),
-		height = 3,
+		width = math.max(14, math.min(#root_node.name + 8, 40)),
+		height = 5,
 	}
 
 	local caller_y = 2

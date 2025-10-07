@@ -1,4 +1,5 @@
 local graph_module = require("codebase-mindmap.graph")
+local graph_async = require("codebase-mindmap.graph_async")
 local layout = require("codebase-mindmap.layout")
 local render = require("codebase-mindmap.render")
 
@@ -32,47 +33,97 @@ function M.show_file_map()
     return
   end
 
-  local symbol = graph_module.find_symbol_at_cursor(bufnr)
+  vim.notify("Finding symbol at cursor...", vim.log.levels.INFO)
 
-  if not symbol then
-    vim.notify("No function/method found at cursor. Place cursor inside a function.", vim.log.levels.WARN)
-    return
-  end
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local line = cursor[1] - 1
+  local col = cursor[2]
 
-  local symbol_name = symbol.name or "Unknown"
+  local params = {
+    textDocument = vim.lsp.util.make_text_document_params(bufnr),
+    position = { line = line, character = col },
+  }
 
-  state.graph = graph_module.build_function_call_graph(bufnr, symbol)
+  for _, client in ipairs(clients) do
+    if client.server_capabilities.documentSymbolProvider then
+      client.request("textDocument/documentSymbol", params, function(err, result)
+        if err or not result then
+          vim.notify("No LSP symbols available", vim.log.levels.WARN)
+          return
+        end
 
-  if not state.graph then
-    vim.notify("Could not build call graph for " .. symbol_name, vim.log.levels.WARN)
-    return
-  end
+        local function find_enclosing(symbols, target_line, target_col)
+          for _, symbol in ipairs(symbols) do
+            local range = symbol.range or symbol.location and symbol.location.range
+            if range then
+              local start_line = range.start.line
+              local end_line = range["end"].line
 
-  state.current_title = "Function: " .. symbol_name
-  state.selected_node = "root"
+              if target_line >= start_line and target_line <= end_line then
+                if symbol.children and #symbol.children > 0 then
+                  local child_result = find_enclosing(symbol.children, target_line, target_col)
+                  if child_result then
+                    return child_result
+                  end
+                end
+                return symbol
+              end
+            end
+          end
+          return nil
+        end
 
-  local caller_count = 0
-  local callee_count = 0
+        local symbol = find_enclosing(result, line, col)
 
-  for _, node in pairs(state.graph.nodes) do
-    if node.level == -1 or node.level == -2 or node.level == -3 then
-      caller_count = caller_count + 1
+        if not symbol then
+          vim.notify("No function/method found at cursor. Place cursor inside a function.", vim.log.levels.WARN)
+          return
+        end
+
+        local symbol_name = symbol.name or "Unknown"
+
+        vim.notify("Building call graph for " .. symbol_name .. "...", vim.log.levels.INFO)
+
+        graph_async.build_function_call_graph_async(bufnr, symbol, function(graph)
+          if not graph then
+            vim.notify("Could not build call graph for " .. symbol_name, vim.log.levels.WARN)
+            return
+          end
+
+          state.graph = graph
+          state.current_title = "Function: " .. symbol_name
+          state.selected_node = "root"
+
+          local caller_count = 0
+          local callee_count = 0
+
+          for _, node in pairs(state.graph.nodes) do
+            if node.level == -1 or node.level == -2 or node.level == -3 then
+              caller_count = caller_count + 1
+            end
+            if node.level == 1 or node.level == 2 or node.level == 3 then
+              callee_count = callee_count + 1
+            end
+          end
+
+          if caller_count == 0 and callee_count == 0 then
+            vim.notify(string.format("%s has no callers or callees in codebase", symbol_name), vim.log.levels.INFO)
+          else
+            vim.notify(
+              string.format("%s: %d callers, %d callees", symbol_name, caller_count, callee_count),
+              vim.log.levels.INFO
+            )
+          end
+
+          M.render_with_layout(state.current_layout, state.current_title)
+        end)
+      end)
+      
+      return
     end
-    if node.level == 1 or node.level == 2 or node.level == 3 then
-      callee_count = callee_count + 1
-    end
   end
 
-  if caller_count == 0 and callee_count == 0 then
-    vim.notify(string.format("%s has no callers or callees in codebase", symbol_name), vim.log.levels.INFO)
-  else
-    vim.notify(
-      string.format("%s: %d callers, %d callees", symbol_name, caller_count, callee_count),
-      vim.log.levels.INFO
-    )
-  end
-
-  M.render_with_layout(state.current_layout, state.current_title)
+  vim.notify("No LSP with documentSymbolProvider available", vim.log.levels.WARN)
 end
 
 function M.show_workspace_map()
@@ -142,7 +193,7 @@ function M.search_function()
 
       vim.ui.select(choices, {
         prompt = string.format("Found %d matches:", #matches),
-      }, function(choice, idx)
+      }, function(_, idx)
         if idx then
           state.selected_node = matches[idx].id
           M.refresh_display()
@@ -169,11 +220,20 @@ function M.explore_selected()
     vim.api.nvim_win_close(state.winnr, true)
   end
 
-  state.graph = graph_module.build_function_call_graph(state.source_bufnr, node.symbol)
-  state.current_title = "Function: " .. node.name
-  state.selected_node = "root"
+  vim.notify("Exploring " .. node.name .. "...", vim.log.levels.INFO)
 
-  M.render_with_layout(state.current_layout, state.current_title)
+  graph_async.build_function_call_graph_async(state.source_bufnr, node.symbol, function(graph)
+    if not graph then
+      vim.notify("Could not build call graph", vim.log.levels.WARN)
+      return
+    end
+
+    state.graph = graph
+    state.current_title = "Function: " .. node.name
+    state.selected_node = "root"
+
+    M.render_with_layout(state.current_layout, state.current_title)
+  end)
 end
 
 function M.render_with_layout(layout_type, title)
@@ -323,15 +383,18 @@ function M.refresh_display()
 
   local lines = render.render(state.graph, state.positions, state.selected_node)
 
-  vim.api.nvim_buf_set_option(state.bufnr, "modifiable", true)
+  vim.bo[state.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(state.bufnr, "modifiable", false)
+  vim.bo[state.bufnr].modifiable = false
 
   local node = state.graph.nodes[state.selected_node]
   if node then
     local pos = state.positions[state.selected_node]
     if pos then
-      pcall(vim.api.nvim_win_set_cursor, state.winnr, { pos.y + 1, pos.x + 2 })
+      pcall(vim.api.nvim_win_set_cursor, state.winnr, { pos.y + 1, pos.x + 1 })
+
+      vim.api.nvim_set_option_value("cursorline", true, { win = state.winnr })
+      vim.api.nvim_set_option_value("cursorcolumn", false, { win = state.winnr })
     end
   end
 end
@@ -379,19 +442,19 @@ function M.display(lines, title)
   state.bufnr = vim.api.nvim_create_buf(false, true)
 
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(state.bufnr, "modifiable", false)
-  vim.api.nvim_buf_set_option(state.bufnr, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(state.bufnr, "filetype", "mindmap")
+  vim.bo[state.bufnr].modifiable = false
+  vim.bo[state.bufnr].buftype = "nofile"
+  vim.bo[state.bufnr].filetype = "mindmap"
 
-  local width = math.floor(vim.o.columns * 0.95)
-  local height = math.floor(vim.o.lines * 0.95)
+  local width = math.floor(vim.o.columns * 0.9)
+  local height = math.floor(vim.o.lines * 0.9)
 
   state.winnr = vim.api.nvim_open_win(state.bufnr, true, {
     relative = "editor",
     width = width,
     height = height,
-    col = math.floor(vim.o.columns * 0.025),
-    row = math.floor(vim.o.lines * 0.025),
+    col = math.floor(vim.o.columns * 0.05),
+    row = math.floor(vim.o.lines * 0.05),
     style = "minimal",
     border = "rounded",
     title = title or "Call Graph",
@@ -401,10 +464,13 @@ function M.display(lines, title)
   M.setup_keymaps()
   M.setup_highlights()
 
+  vim.api.nvim_set_option_value("cursorline", true, { win = state.winnr })
+  vim.api.nvim_set_option_value("cursorlineopt", "line", { win = state.winnr })
+
   if state.selected_node then
     local pos = state.positions[state.selected_node]
     if pos then
-      pcall(vim.api.nvim_win_set_cursor, state.winnr, { pos.y + 1, pos.x + 2 })
+      pcall(vim.api.nvim_win_set_cursor, state.winnr, { pos.y + 1, pos.x + 1 })
     end
   end
 end
@@ -506,16 +572,14 @@ function M.setup_highlights()
   vim.api.nvim_buf_call(state.bufnr, function()
     vim.cmd([[
       syntax match MindMapBox /[┌┐└┘─│╔╗╚╝═║╭╮╰╯]/
-      syntax match MindMapArrow /[●▶▼→]/
+      syntax match MindMapArrow /[●▶▼→>]/
       syntax match MindMapLine /[─│┐└┌┘]/
       syntax match MindMapText /[a-zA-Z0-9_\.]/
-      syntax match MindMapSelected /\*\*\*.*\*\*\*/
       
       highlight default MindMapBox guifg=#61AFEF ctermfg=75
       highlight default MindMapArrow guifg=#E06C75 gui=bold ctermfg=204
       highlight default MindMapLine guifg=#56B6C2 ctermfg=73
       highlight default MindMapText guifg=#ABB2BF ctermfg=249
-      highlight default MindMapSelected guifg=#E5C07B gui=bold,reverse ctermfg=180 cterm=bold,reverse
     ]])
   end)
 end

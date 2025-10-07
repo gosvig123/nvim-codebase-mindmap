@@ -113,18 +113,27 @@ Press `/` to search, `<CR>` to explore a function's call graph.
 
 ```lua
 require("codebase-mindmap").setup({
-  -- Default keybindings
-  mappings = {
-    function_view = "<leader>mf",
-    overview = "<leader>mm",
-  },
-  
-  -- Filter settings (configured in graph.lua)
-  max_callers = 8,   -- Maximum callers to show
-  max_callees = 10,  -- Maximum callees to show
-  max_depth = 2,     -- Maximum call hierarchy depth
+  max_depth = 2,        -- Call hierarchy depth (1-5, lower = faster)
+  lsp_timeout = 1000,   -- LSP request timeout in ms (lower = faster)
+  layout = "compact",   -- Default layout: "compact", "tree", "wide"
 })
 ```
+
+### Performance Tips
+
+If the plugin feels slow or blocks the editor:
+
+1. **Reduce `max_depth`**: Default is 2. Try 1 for instant results:
+   ```lua
+   require("codebase-mindmap").setup({ max_depth = 1 })
+   ```
+
+2. **Lower `lsp_timeout`**: Default is 1000ms. Try 500ms:
+   ```lua
+   require("codebase-mindmap").setup({ lsp_timeout = 500 })
+   ```
+
+3. **Use faster LSP**: Some LSP servers (like `basedpyright`) are faster than others
 
 ## 🎯 Supported LSP Servers
 

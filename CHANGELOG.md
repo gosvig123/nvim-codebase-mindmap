@@ -2,7 +2,58 @@
 
 All notable changes to nvim-codebase-mindmap are documented here.
 
-## [Latest] - 2024-10-06
+## [Latest] - 2024-10-07
+
+### 🚀 MAJOR: Non-Blocking Async Operations
+
+**Fixed**: Editor no longer freezes when building call graphs
+
+- Created fully async `graph_async.lua` module  
+- Converted all LSP calls to use `client.request()` with callbacks
+- Async `find_symbol_at_cursor` implementation in UI
+- Editor remains fully responsive during graph building
+- Shows progress notifications ("Finding symbol...", "Building call graph...")
+
+**Impact**: Can type, move cursor, and use editor while graphs load ✅
+
+### ⚡ Ultra-Compact Layout (40% More Visible)
+
+**Box Sizes** (Smaller):
+- Regular nodes: `name + 2, max 24` (was +4, max 30)
+- Root node: `name + 3, max 28` (was +6, max 35)  
+- Overview: `name + 2, max 22` (was +4, max 28)
+
+**Spacing** (Tighter):
+- Compact: `x_offset=24, root=40` (was 28/45)
+- Tree: `x_offset=18, root=30` (was 20/35)
+- Wide: `x_offset=45, root=60` (was 50/70)
+- Padding: 1 space (was 2)
+
+**Canvas**: `100x25 min` (was 120x30)
+
+**Grid**: 8 columns, width 24 (was 6 columns, width 30)
+
+**Result**: ~40% more functions visible on screen
+
+### ✨ Better Selection Indicator
+
+**Old**: `** text **` (caused truncation: `** ↳ too...`)  
+**New**: `▶ text` (keeps full text: `▶create_progress_tracker`)
+
+- Red arrow at left border
+- Text never truncated by selection marker
+- Same highlighting as connection arrows
+
+### ⚙️ Performance Defaults
+
+```lua
+{
+  max_depth = 1,      -- Instant results (was 2)
+  lsp_timeout = 800,  -- Fast timeout (was 1000)
+}
+```
+
+## [Previous] - 2024-10-06
 
 ### 📏 Spacing & Readability Improvements
 

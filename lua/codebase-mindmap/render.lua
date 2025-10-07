@@ -85,7 +85,7 @@ function M.draw_box(canvas, x, y, width, height, text, style, is_selected)
   }
 
   local b = borders[style]
-  local priority = 5
+  local priority = is_selected and 6 or 5
 
   if y >= 1 and y <= #canvas.data then
     if x >= 1 and x <= #canvas.data[1] then
@@ -130,13 +130,10 @@ function M.draw_box(canvas, x, y, width, height, text, style, is_selected)
   local text_y = y + math.floor(height / 2)
   local padding = 3
   local text_x = x + padding
-
-  if is_selected then
-    text = "** " .. text .. " **"
-  end
-
+  
   local available_width = width - (padding * 2)
   local display_text = text
+  
   if #text > available_width then
     display_text = text:sub(1, available_width - 3) .. "..."
   end
@@ -155,12 +152,12 @@ function M.render(graph, positions, selected_node)
   local max_y = 0
 
   for _, pos in pairs(positions) do
-    max_x = math.max(max_x, pos.x + pos.width + 15)
+    max_x = math.max(max_x, pos.x + pos.width + 10)
     max_y = math.max(max_y, pos.y + pos.height + 2)
   end
 
-  max_x = math.max(max_x, 200)
-  max_y = math.max(max_y, 50)
+  max_x = math.max(max_x, 150)
+  max_y = math.max(max_y, 35)
 
   local canvas = M.create_canvas(max_x, max_y)
 
