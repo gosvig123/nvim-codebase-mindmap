@@ -128,10 +128,29 @@ local function is_builtin_or_stdlib(name)
 
 	-- Framework/library specific (FastAPI, SQLAlchemy, Supabase, etc.)
 	local framework_names = {
+		-- FastAPI HTTP methods
+		"get",
+		"post",
+		"put",
+		"patch",
+		"delete",
+		"head",
+		"options",
+		"trace",
+		-- FastAPI dependencies
 		"depends",
 		"doc",
 		"query",
+		"path",
+		"body",
+		"header",
+		"cookie",
+		"form",
+		"file",
+		"uploadfile",
 		"default",
+		"defaultplaceholder",
+		"doc",
 		"exception",
 		"httperror",
 		"httpexception",
@@ -231,6 +250,35 @@ local function is_builtin_or_stdlib(name)
 	for _, pattern in ipairs(internal_patterns) do
 		if lower_name:match(pattern) then
 			return true
+		end
+	end
+
+	-- Filter out common type/class patterns (usually uppercase single words)
+	if name:match("^[A-Z][a-z]+$") and #name < 15 then
+		-- Short capitalized names like Doc, Default, Query, etc are usually types
+		local common_types = {
+			"Doc",
+			"Default",
+			"Query",
+			"Path",
+			"Body",
+			"Header",
+			"Cookie",
+			"Form",
+			"File",
+			"Depends",
+			"Security",
+			"Response",
+			"Request",
+			"HTTPException",
+			"HTTPError",
+			"Field",
+			"Validator",
+		}
+		for _, type_name in ipairs(common_types) do
+			if name == type_name then
+				return true
+			end
 		end
 	end
 

@@ -32,11 +32,52 @@ local function is_builtin_or_stdlib(name)
     "print", "input", "range", "enumerate", "zip", "map", "filter",
   }
 
+  local framework_and_decorators = {
+    -- FastAPI/HTTP methods
+    "get", "post", "put", "patch", "delete", "head", "options", "trace",
+    -- FastAPI dependencies and classes
+    "depends", "dependency", "query", "path", "body", "header", "cookie",
+    "form", "file", "uploadfile", "httperror", "httpexception",
+    -- Pydantic and typing classes (these show as Classes in LSP)
+    "basemodel", "field", "validator", "root_validator", "field_validator",
+    "model_validator", "computed_field", "serializer", "model_serializer",
+    "required", "optional",
+    -- FastAPI specific type classes
+    "doc", "default", "defaultplaceholder",
+    -- Common type annotations  
+    "str", "int", "float", "bool", "list", "dict", "set", "tuple",
+    "none", "any", "union", "literal", "annotated",
+    -- Other common patterns
+    "property", "staticmethod", "classmethod", "abstractmethod",
+    "cached_property", "dataclass", "attrs",
+  }
+
   local lower_name = name:lower()
   
   for _, builtin in ipairs(builtins) do
     if lower_name == builtin then
       return true
+    end
+  end
+
+  for _, framework in ipairs(framework_and_decorators) do
+    if lower_name == framework then
+      return true
+    end
+  end
+
+  -- Filter out common type/class patterns (usually uppercase single words)
+  if name:match("^[A-Z][a-z]+$") and #name < 15 then
+    -- Short capitalized names like Doc, Default, Query, etc are usually types
+    local common_types = {
+      "Doc", "Default", "Query", "Path", "Body", "Header", "Cookie",
+      "Form", "File", "Depends", "Security", "Response", "Request",
+      "HTTPException", "HTTPError", "Field", "Validator",
+    }
+    for _, type_name in ipairs(common_types) do
+      if name == type_name then
+        return true
+      end
     end
   end
 
