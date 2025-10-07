@@ -182,7 +182,15 @@ function M.render_with_layout(layout_type, title)
     return
   end
 
-  state.positions = layout.compact_layout(state.graph)
+  if layout_type == "compact" then
+    state.positions = layout.compact_layout(state.graph)
+  elseif layout_type == "tree" then
+    state.positions = layout.tree_layout(state.graph)
+  elseif layout_type == "wide" then
+    state.positions = layout.wide_layout(state.graph)
+  else
+    state.positions = layout.compact_layout(state.graph)
+  end
 
   state.node_list = {}
   for node_id, pos in pairs(state.positions) do
